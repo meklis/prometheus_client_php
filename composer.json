@@ -1,5 +1,5 @@
 {
-    "name": "promphp/prometheus_client_php",
+    "name": "meklis/prometheus_client_php",
     "description": "Prometheus instrumentation library for PHP applications.",
     "type": "library",
     "license": "Apache-2.0",
@@ -7,6 +7,10 @@
         {
             "name": "Lukas Kämmerling",
             "email": "kontakt@lukas-kaemmerling.de"
+        },
+        {
+            "name": "Max Boyar",
+            "email": "admin@wildcore.tools"
         }
     ],
     "replace": {
