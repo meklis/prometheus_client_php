@@ -95,8 +95,8 @@ class Redis implements Adapter
     }
 
     /**
-     * @deprecated use replacement method wipeStorage from Adapter interface
      * @throws StorageException
+     * @deprecated use replacement method wipeStorage from Adapter interface
      */
     public function flushRedis(): void
     {
@@ -169,12 +169,12 @@ LUA
      * @return MetricFamilySamples[]
      * @throws StorageException
      */
-    public function collect(): array
+    public function collect($prefix = ''): array
     {
         $this->ensureOpenConnection();
-        $metrics = $this->collectHistograms();
-        $metrics = array_merge($metrics, $this->collectGauges());
-        $metrics = array_merge($metrics, $this->collectCounters());
+        $metrics = $this->collectHistograms($prefix);
+        $metrics = array_merge($metrics, $this->collectGauges($prefix));
+        $metrics = array_merge($metrics, $this->collectCounters($prefix));
         $metrics = array_merge($metrics, $this->collectSummaries());
         return array_map(
             function (array $metric): MetricFamilySamples {
@@ -218,11 +218,11 @@ LUA
             if ($this->options['persistent_connections'] !== false) {
                 $connection_successful = $this->redis->pconnect(
                     $this->options['host'],
-                    (int) $this->options['port'],
-                    (float) $this->options['timeout']
+                    (int)$this->options['port'],
+                    (float)$this->options['timeout']
                 );
             } else {
-                $connection_successful = $this->redis->connect($this->options['host'], (int) $this->options['port'], (float) $this->options['timeout']);
+                $connection_successful = $this->redis->connect($this->options['host'], (int)$this->options['port'], (float)$this->options['timeout']);
             }
             if (!$connection_successful) {
                 throw new StorageException("Can't connect to Redis server", 0);
@@ -287,7 +287,8 @@ LUA
         if (false === $json) {
             throw new RuntimeException(json_last_error_msg());
         }
-        $this->redis->setNx($metaKey, $json);  /** @phpstan-ignore-line */
+        $this->redis->setNx($metaKey, $json);
+        /** @phpstan-ignore-line */
 
         // store value key
         $valueKey = $summaryKey . ':' . $this->valueKey($data);
@@ -295,7 +296,8 @@ LUA
         if (false === $json) {
             throw new RuntimeException(json_last_error_msg());
         }
-        $this->redis->setNx($valueKey, $json); /** @phpstan-ignore-line */
+        $this->redis->setNx($valueKey, $json);
+        /** @phpstan-ignore-line */
 
         // trick to handle uniqid collision
         $done = false;
@@ -389,12 +391,15 @@ LUA
     /**
      * @return mixed[]
      */
-    private function collectHistograms(): array
+    private function collectHistograms($prefix = ''): array
     {
         $keys = $this->redis->sMembers(self::$prefix . Histogram::TYPE . self::PROMETHEUS_METRIC_KEYS_SUFFIX);
         sort($keys);
         $histograms = [];
         foreach ($keys as $key) {
+            if ($prefix && strpos($key, self::$prefix . ":" . Gauge::TYPE . ":" . $prefix) === false) {
+                continue;
+            }
             $raw = $this->redis->hGetAll(str_replace($this->redis->_prefix(''), '', $key));
             $histogram = json_decode($raw['__meta'], true);
             unset($raw['__meta']);
@@ -521,7 +526,7 @@ LUA
                 $sampleValues = $this->redis->keys($summaryKey . ':' . $metaData['name'] . ':' . $encodedLabelValues . ':value:*');
                 foreach ($sampleValues as $sampleValueWithPrefix) {
                     $sampleValue = $this->removePrefixFromKey($sampleValueWithPrefix);
-                    $samples[] = (float) $this->redis->get($sampleValue);
+                    $samples[] = (float)$this->redis->get($sampleValue);
                 }
 
                 if (count($samples) === 0) {
@@ -569,12 +574,15 @@ LUA
     /**
      * @return mixed[]
      */
-    private function collectGauges(): array
+    private function collectGauges($prefix = ''): array
     {
         $keys = $this->redis->sMembers(self::$prefix . Gauge::TYPE . self::PROMETHEUS_METRIC_KEYS_SUFFIX);
         sort($keys);
         $gauges = [];
         foreach ($keys as $key) {
+            if ($prefix && strpos($key, self::$prefix . ":" . Gauge::TYPE . ":" . $prefix) === false) {
+                continue;
+            }
             $raw = $this->redis->hGetAll(str_replace($this->redis->_prefix(''), '', $key));
             $gauge = json_decode($raw['__meta'], true);
             unset($raw['__meta']);
@@ -598,12 +606,15 @@ LUA
     /**
      * @return mixed[]
      */
-    private function collectCounters(): array
+    private function collectCounters($prefix = ''): array
     {
         $keys = $this->redis->sMembers(self::$prefix . Counter::TYPE . self::PROMETHEUS_METRIC_KEYS_SUFFIX);
         sort($keys);
         $counters = [];
         foreach ($keys as $key) {
+            if ($prefix && strpos($key, self::$prefix . ":" . Gauge::TYPE . ":" . $prefix) === false) {
+                continue;
+            }
             $raw = $this->redis->hGetAll(str_replace($this->redis->_prefix(''), '', $key));
             $counter = json_decode($raw['__meta'], true);
             unset($raw['__meta']);

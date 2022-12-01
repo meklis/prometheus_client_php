@@ -16,7 +16,7 @@ interface Adapter
     /**
      * @return MetricFamilySamples[]
      */
-    public function collect(): array;
+    public function collect($prefix = ''): array;
 
     /**
      * @param mixed[] $data

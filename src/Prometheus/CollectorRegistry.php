@@ -81,9 +81,9 @@ class CollectorRegistry implements RegistryInterface
     /**
      * @return MetricFamilySamples[]
      */
-    public function getMetricFamilySamples(): array
+    public function getMetricFamilySamples($prefix = ''): array
     {
-        return $this->storageAdapter->collect();
+        return $this->storageAdapter->collect($prefix);
     }
 
     /**

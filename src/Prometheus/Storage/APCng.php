@@ -71,9 +71,10 @@ class APCng implements Adapter
     }
 
     /**
+     * @TODO Working with prefix not realized
      * @return MetricFamilySamples[]
      */
-    public function collect(): array
+    public function collect($prefix = ''): array
     {
         $metrics = $this->collectHistograms();
         $metrics = array_merge($metrics, $this->collectGauges());

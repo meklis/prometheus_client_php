@@ -31,9 +31,10 @@ class InMemory implements Adapter
     protected $summaries = [];
 
     /**
+     * @TODO Working with prefix not realized
      * @return MetricFamilySamples[]
      */
-    public function collect(): array
+    public function collect($prefix = ''): array
     {
         $metrics = $this->internalCollect($this->counters);
         $metrics = array_merge($metrics, $this->internalCollect($this->gauges));
@@ -352,7 +353,7 @@ class InMemory implements Adapter
     }
 
     /**
-     * @param mixed[]    $data
+     * @param mixed[] $data
      * @param string|int $bucket
      *
      * @return string
