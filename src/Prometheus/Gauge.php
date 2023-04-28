@@ -11,10 +11,12 @@ class Gauge extends Collector
     const TYPE = 'gauge';
 
     /**
-     * @param double $value e.g. 123
-     * @param string[] $labels e.g. ['status', 'opcode']
+     * @param float $value
+     * @param array $labels
+     * @param $timeoutSec
+     * @return void
      */
-    public function set(float $value, array $labels = []): void
+    public function set(float $value, array $labels = [], $timeoutSec = -1): void
     {
         $this->assertLabelsAreDefinedCorrectly($labels);
 
@@ -26,6 +28,7 @@ class Gauge extends Collector
                 'labelNames' => $this->getLabelNames(),
                 'labelValues' => $labels,
                 'value' => $value,
+                'expired_at' => $timeoutSec == -1 ? null : time() + $timeoutSec,
                 'command' => Adapter::COMMAND_SET,
             ]
         );
@@ -40,7 +43,9 @@ class Gauge extends Collector
     }
 
     /**
-     * @param string[] $labels
+     * @param array $labels
+     * @param $timeoutSec
+     * @return void
      */
     public function inc(array $labels = []): void
     {
@@ -48,8 +53,10 @@ class Gauge extends Collector
     }
 
     /**
-     * @param int|float $value
-     * @param string[] $labels
+     * @param $value
+     * @param array $labels
+     * @param $timeoutSec
+     * @return void
      */
     public function incBy($value, array $labels = []): void
     {

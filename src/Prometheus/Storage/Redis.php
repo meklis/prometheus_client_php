@@ -338,7 +338,7 @@ LUA
                 self::$prefix . Gauge::TYPE . self::PROMETHEUS_METRIC_KEYS_SUFFIX,
                 $this->getRedisCommand($data['command']),
                 json_encode($data['labelValues']),
-                $data['value'],
+                json_encode(['value'=> $data['value'], 'expired_at' => isset($data['expired_at']) ? $data['expired_at'] : null]),
                 json_encode($metaData),
             ],
             2
@@ -585,9 +585,17 @@ LUA
             }
             $raw = $this->redis->hGetAll(str_replace($this->redis->_prefix(''), '', $key));
             $gauge = json_decode($raw['__meta'], true);
+
             unset($raw['__meta']);
             $gauge['samples'] = [];
             foreach ($raw as $k => $value) {
+                if(is_string($value) && strpos($value, "{") !== false) {
+                    $vl = json_decode($value, true);
+                    if ($vl && $vl['expired_at'] && $vl['expired_at'] < time()) {
+                        continue;
+                    }
+                    $value = $vl['value'];
+                }
                 $gauge['samples'][] = [
                     'name' => $gauge['name'],
                     'labelNames' => [],
